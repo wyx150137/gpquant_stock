@@ -341,7 +341,8 @@ def _ts_ms_20(x):
     return ret1 / ret2
 
 
-def _ts_max_min_ratio(x, w):
+def _ts_max_min_ratio(x):
+    w = 20
     ret1 = _ts_max(x, w)
     ret2 = _ts_min(x, w)
     return ret1 / ret2
@@ -369,6 +370,25 @@ def _ts_cov_20(x, y):
     cov = (np.sum(x_rolling_demean * y_rolling_demean, axis=1) / w)
 
     ret[w - 1:, :] = cov
+    return ret
+
+
+def _ts_mean_between_diff_top_5_bot_5_20(x):
+    """
+    :param x:
+    :return: 过去20个时序值中，最大的五个数字的均值减去最小的五个数字的均值
+    """
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+
+    top_5 = np.partition(x_rolling, -5, axis=1)[:, -5:, :]
+    bot_5 = np.partition(x_rolling, 5, axis=1)[:, :5, :]
+
+    ret[w - 1:, :] = np.nanmean(top_5, axis=1) - np.nanmean(bot_5, axis=1)
+
     return ret
 
 
@@ -411,6 +431,9 @@ ts_rank2 = _Function(function=_ts_rank, name='ts_rank', arity=2)
 ts_ms20_1 = _Function(function=_ts_ms_20, name='ts_ms_20', arity=1)
 ts_weighted_ma2 = _Function(function=_ts_weighted_ma, name='ts_weighted_ma', arity=2)
 ts_mean_rank20_1 = _Function(function=_ts_mean_rank_20, name='ts_mean_rank_20', arity=1)
+ts_max_min_ratio_1 = _Function(function=_ts_max_min_ratio, name='ts_max_min_ratio', arity=1)
+ts_mean_between_diff_top_5_bot_5_20 = _Function(function=_ts_mean_between_diff_top_5_bot_5_20,
+                                                name='ts_mean_between_diff_top_5_bot_5_20', arity=1)
 
 _function_map = {'add': add2,
                  'sub': sub2,
