@@ -149,16 +149,13 @@ def _sigmoid(x1):
     with np.errstate(over='ignore', under='ignore'):
         return 1 / (1 + np.exp(-x1))
 
-def _protected_log(x):
-    x = np.abs(x)
-    return np.log(x + 1)
 
 def _power2(x):
     return x ** 2
 
+
 def _power3(x):
     return x ** 3
-
 
 
 def _shift(arr, num, fill_value):
@@ -178,7 +175,8 @@ def _delay(x, num):
     return _shift(x, num, np.nan)
 
 
-def _delta(x, num):
+def _delta(x):
+    num = 1
     return x - _shift(x, num, np.nan)
 
 
@@ -225,38 +223,39 @@ def _ts_skew(x, period):
 
 
 def _rank(x):
-    '''
+    """
     :param x:
     :return: 截面排名分位数
-    '''
+    """
     return stats.rankdata(x, axis=1) / x.shape[1]
 
 
 def _norm(x):
-    '''
+    """
     :param x:
     :return: 截面标准化
-    '''
+    """
     return stats.zscore(x, axis=0)
 
 
 def _reverse(x):
-    '''
+    """
     :param x:
     :return: 截面均值翻转
-    '''
-    M = np.nanmean(x, axis=1)
-    ret = np.abs(x - M)
+    """
+    m = np.nanmean(x, axis=1)
+    ret = np.abs(x - m)
     return ret
 
 
-def _ts_corr(x, y, w):
-    '''
+def _ts_corr_20(x, y):
+    """
     :param x:
     :param y:
-    :param w:
     :return: 时间序列相关系数
-    '''
+    """
+
+    w = 20
 
     ret = np.full(x.shape, np.nan)
     x_rolling = _rolling_window(x, w)
@@ -277,21 +276,21 @@ def _ts_corr(x, y, w):
 
 
 def _reverse_pro(x):
-    '''
+    """
     :param x:
     :return: 截面均值翻转
-    '''
-    M = np.nanmean(x, axis=1)[:, np.newaxis]
-    ret = np.where(x > M, 1, -1)
+    """
+    m = np.nanmean(x, axis=1)[:, np.newaxis]
+    ret = np.where(x > m, 1, -1)
     return ret
 
 
 def _ts_rank(x, w):
-    '''
+    """
     :param x:
     :param w:
     :return: 时序排名
-    '''
+    """
 
     ret = np.full(x.shape, np.nan)
     x_rolling = _rolling_window(x, w)
@@ -301,35 +300,72 @@ def _ts_rank(x, w):
 
     return ret
 
+
 def _relu(x):
     return np.maximum(x, 0)
 
-def _ts_weighted_ma(x, period):
 
+def _ts_weighted_ma(x, period):
     ret = np.full(x.shape, np.nan)
 
     weight = np.arange(1, period + 1, 1).astype(np.float64)
     weight /= np.sum(weight)
     x_rolling = _rolling_window(x, period)
-    ret[period - 1:, :] = np.average(x_rolling, axis=1, weights = weight)
+    ret[period - 1:, :] = np.average(x_rolling, axis=1, weights=weight)
 
     return ret
 
-def _ts_mean_rank(x, period):
+
+def _ts_mean_rank_20(x):
+    period = 20
     ret = np.full(x.shape, np.nan)
     x = _rank(x)
     x_rolling = _rolling_window(x, period)
     ret[period - 1:, :] = np.nanmean(x_rolling, axis=1)
 
+    return ret
+
+
 def _sign(x):
     return np.sign(x)
 
-def _ts_ms(x, w):
 
+def _ts_ms_20(x):
+    w = 20
     ret1 = _ts_mean(x, w)
     ret2 = _ts_std(x, w)
     return ret1 / ret2
 
+
+def _ts_max_min_ratio(x, w):
+    ret1 = _ts_max(x, w)
+    ret2 = _ts_min(x, w)
+    return ret1 / ret2
+
+
+def _ts_cov_20(x, y):
+    """
+    :param x:
+    :param y:
+    :return: x 和 y rolling 20 的协方差
+    """
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+    y_rolling = _rolling_window(y, w)
+
+    x_rolling_mean = np.nanmean(x_rolling, axis=1)[:, np.newaxis, :]
+    y_rolling_mean = np.nanmean(y_rolling, axis=1)[:, np.newaxis, :]
+
+    x_rolling_demean = x_rolling - x_rolling_mean
+    y_rolling_demean = y_rolling - y_rolling_mean
+
+    cov = (np.sum(x_rolling_demean * y_rolling_demean, axis=1) / w)
+
+    ret[w - 1:, :] = cov
+    return ret
 
 
 add2 = _Function(function=np.add, name='add', arity=2)
@@ -350,7 +386,7 @@ sig1 = _Function(function=_sigmoid, name='sig', arity=1)
 relu1 = _Function(function=_relu, name='relu', arity=1)
 sign1 = _Function(function=_sign, name='sign', arity=1)
 
-delta2 = _Function(function=_delta, name='delta', arity=2)
+delta1 = _Function(function=_delta, name='delta', arity=1)
 rank1 = _Function(function=_rank, name='rank', arity=1)
 reverse1 = _Function(function=_reverse, name='reverse', arity=1)
 norm1 = _Function(function=_norm, name='norm', arity=1)
@@ -362,11 +398,12 @@ ts_min2 = _Function(function=_ts_min, name='ts_min', arity=2)
 ts_max2 = _Function(function=_ts_max, name='ts_max', arity=2)
 ts_delay2 = _Function(function=_delay, name='ts_delay', arity=2)
 ts_skew2 = _Function(function=_ts_skew, name='ts_skew', arity=2)
-ts_corr3 = _Function(function=_ts_corr, name='ts_corr', arity=3)
+ts_corr20_2 = _Function(function=_ts_corr_20, name='ts_corr_20', arity=2)
 ts_rank2 = _Function(function=_ts_rank, name='ts_rank', arity=2)
-ts_ms2 = _Function(function=_ts_ms, name='ts_ms', arity=2)
+ts_ms20_1 = _Function(function=_ts_ms_20, name='ts_ms_20', arity=1)
 ts_weighted_ma2 = _Function(function=_ts_weighted_ma, name='ts_weighted_ma', arity=2)
-ts_mean_rank2 = _Function(function=_ts_mean_rank, name = 'ts_mean_rank', arity=2)
+ts_mean_rank20_1 = _Function(function=_ts_mean_rank_20, name='ts_mean_rank_20', arity=1)
+ts_cov_20_2 = _Function(function=_ts_cov_20, name='ts_cov_20', arity=2)
 
 _function_map = {'add': add2,
                  'sub': sub2,
@@ -384,20 +421,22 @@ _function_map = {'add': add2,
                  'tan': tan1,
                  'sig': sig1,
                  'relu': relu1,
-                 'delta': delta2,
-                 'rank1': rank1,
-                 'reverse1': reverse1,
-                 'norm1': norm1,
-                 'revers_pro1': revers_pro1,
-                 'ts_mean1': ts_mean2,
-                 'ts_std1': ts_std2,
-                 'ts_min1': ts_min2,
-                 'ts_max1': ts_max2,
-                 'ts_delay1': ts_delay2,
-                 'ts_skew1': ts_skew2,
-                 'ts_corr1': ts_corr3,
+                 'sign': sign1,
+                 'delta': delta1,
+                 'rank': rank1,
+                 'reverse': reverse1,
+                 'norm': norm1,
+                 'revers_pro': revers_pro1,
+                 'ts_mean': ts_mean2,
+                 'ts_std': ts_std2,
+                 'ts_min': ts_min2,
+                 'ts_max': ts_max2,
+                 'ts_delay': ts_delay2,
+                 'ts_skew': ts_skew2,
+                 'ts_corr_20': ts_corr20_2,
                  'ts_rank': ts_rank2,
-                 'ts_ms': ts_ms2,
-                 'ts_weighted_ma' : ts_weighted_ma2,
-
+                 'ts_ms_20': ts_ms20_1,
+                 'ts_weighted_ma': ts_weighted_ma2,
+                 'ts_mean_rank_20': ts_mean_rank20_1,
+                 'ts_cov_20': ts_cov_20_2,
                  }
