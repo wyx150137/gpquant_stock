@@ -152,8 +152,18 @@ def _ic_ir(y, y_pred, w):
     :param w:
     :return: weighted rank_ic_ir
     '''
-    ic = _weighted_spearman(y, y_pred, w)
-    ir = ic / np.std(ic)
+
+    ic = []
+
+    for i in range(0, y.shape[0]):
+        temp = _weighted_spearman(y[i,:], y_pred[i, :],w)
+        ic.append(temp)
+
+    ic_mean = np.mean(ic)
+    ic_std = np.std(ic)
+
+    ir = ic_mean / ic_std
+
     return ir
 
 

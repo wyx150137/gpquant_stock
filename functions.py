@@ -301,15 +301,35 @@ def _ts_rank(x, w):
 
     return ret
 
+def _relu(x):
+    return np.maximum(x, 0)
+
+def _ts_weighted_ma(x, period):
+
+    ret = np.full(x.shape, np.nan)
+
+    weight = np.arange(1, period + 1, 1).astype(np.float64)
+    weight /= np.sum(weight)
+    x_rolling = _rolling_window(x, period)
+    ret[period - 1:, :] = np.average(x_rolling, axis=1, weights = weight)
+
+    return ret
+
+def _ts_mean_rank(x, period):
+    ret = np.full(x.shape, np.nan)
+    x = _rank(x)
+    x_rolling = _rolling_window(x, period)
+    ret[period - 1:, :] = np.nanmean(x_rolling, axis=1)
+
+def _sign(x):
+    return np.sign(x)
+
 def _ts_ms(x, w):
 
     ret1 = _ts_mean(x, w)
     ret2 = _ts_std(x, w)
     return ret1 / ret2
 
-
-def _relu(x):
-    return np.maximum(x, 0)
 
 
 add2 = _Function(function=np.add, name='add', arity=2)
@@ -328,22 +348,25 @@ cos1 = _Function(function=np.cos, name='cos', arity=1)
 tan1 = _Function(function=np.tan, name='tan', arity=1)
 sig1 = _Function(function=_sigmoid, name='sig', arity=1)
 relu1 = _Function(function=_relu, name='relu', arity=1)
+sign1 = _Function(function=_sign, name='sign', arity=1)
 
-delta1 = _Function(function=_delta, name='delta', arity=2)
-rank1 = _Function(function=_rank, name='rank1', arity=1)
-reverse1 = _Function(function=_reverse, name='reverse1', arity=1)
-norm1 = _Function(function=_norm, name='norm1', arity=1)
-revers_pro1 = _Function(function=_reverse_pro, name='revers_pro1', arity=1)
+delta2 = _Function(function=_delta, name='delta', arity=2)
+rank1 = _Function(function=_rank, name='rank', arity=1)
+reverse1 = _Function(function=_reverse, name='reverse', arity=1)
+norm1 = _Function(function=_norm, name='norm', arity=1)
+revers_pro1 = _Function(function=_reverse_pro, name='revers_pro', arity=1)
 
-ts_mean1 = _Function(function=_ts_mean, name='ts_mean1', arity=2)
-ts_std1 = _Function(function=_ts_std, name='ts_std1', arity=2)
-ts_min1 = _Function(function=_ts_min, name='ts_min1', arity=2)
-ts_max1 = _Function(function=_ts_max, name='ts_max1', arity=2)
-ts_delay1 = _Function(function=_delay, name='ts_delay1', arity=2)
-ts_skew1 = _Function(function=_ts_skew, name='ts_skew1', arity=2)
-ts_corr1 = _Function(function=_ts_corr, name='ts_corr1', arity=3)
-ts_rank = _Function(function=_ts_rank, name='ts_rank', arity=2)
-ts_ms = _Function(function=_ts_ms, name='ts_ms', arity=2)
+ts_mean2 = _Function(function=_ts_mean, name='ts_mean', arity=2)
+ts_std2 = _Function(function=_ts_std, name='ts_std', arity=2)
+ts_min2 = _Function(function=_ts_min, name='ts_min', arity=2)
+ts_max2 = _Function(function=_ts_max, name='ts_max', arity=2)
+ts_delay2 = _Function(function=_delay, name='ts_delay', arity=2)
+ts_skew2 = _Function(function=_ts_skew, name='ts_skew', arity=2)
+ts_corr3 = _Function(function=_ts_corr, name='ts_corr', arity=3)
+ts_rank2 = _Function(function=_ts_rank, name='ts_rank', arity=2)
+ts_ms2 = _Function(function=_ts_ms, name='ts_ms', arity=2)
+ts_weighted_ma2 = _Function(function=_ts_weighted_ma, name='ts_weighted_ma', arity=2)
+ts_mean_rank2 = _Function(function=_ts_mean_rank, name = 'ts_mean_rank', arity=2)
 
 _function_map = {'add': add2,
                  'sub': sub2,
@@ -361,18 +384,20 @@ _function_map = {'add': add2,
                  'tan': tan1,
                  'sig': sig1,
                  'relu': relu1,
-                 'delta': delta1,
+                 'delta': delta2,
                  'rank1': rank1,
                  'reverse1': reverse1,
                  'norm1': norm1,
                  'revers_pro1': revers_pro1,
-                 'ts_mean1': ts_mean1,
-                 'ts_std1': ts_std1,
-                 'ts_min1': ts_min1,
-                 'ts_max1': ts_max1,
-                 'ts_delay1': ts_delay1,
-                 'ts_skew1': ts_skew1,
-                 'ts_corr1': ts_corr1,
-                 'ts_rank': ts_rank,
-                 'ts_ms': ts_ms,
+                 'ts_mean1': ts_mean2,
+                 'ts_std1': ts_std2,
+                 'ts_min1': ts_min2,
+                 'ts_max1': ts_max2,
+                 'ts_delay1': ts_delay2,
+                 'ts_skew1': ts_skew2,
+                 'ts_corr1': ts_corr3,
+                 'ts_rank': ts_rank2,
+                 'ts_ms': ts_ms2,
+                 'ts_weighted_ma' : ts_weighted_ma2,
+
                  }
