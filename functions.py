@@ -150,12 +150,52 @@ def _sigmoid(x1):
         return 1 / (1 + np.exp(-x1))
 
 
+def _relu(x):
+    return np.maximum(x, 0)
+
+
 def _power2(x):
     return x ** 2
 
 
 def _power3(x):
     return x ** 3
+
+
+def _rank(x):
+    """
+    :param x:
+    :return: 截面排名分位数
+    """
+    return stats.rankdata(x, axis=1) / x.shape[1]
+
+
+def _norm(x):
+    """
+    :param x:
+    :return: 截面标准化
+    """
+    return stats.zscore(x, axis=0)
+
+
+def _reverse(x):
+    """
+    :param x:
+    :return: 截面均值翻转
+    """
+    m = np.nanmean(x, axis=1)
+    ret = np.abs(x - m)
+    return ret
+
+
+def _reverse_pro(x):
+    """
+    :param x:
+    :return: 截面均值翻转
+    """
+    m = np.nanmean(x, axis=1)[:, np.newaxis]
+    ret = np.where(x > m, 1, -1)
+    return ret
 
 
 def _shift(arr, num, fill_value):
@@ -222,32 +262,6 @@ def _ts_skew(x, period):
     return ret
 
 
-def _rank(x):
-    """
-    :param x:
-    :return: 截面排名分位数
-    """
-    return stats.rankdata(x, axis=1) / x.shape[1]
-
-
-def _norm(x):
-    """
-    :param x:
-    :return: 截面标准化
-    """
-    return stats.zscore(x, axis=0)
-
-
-def _reverse(x):
-    """
-    :param x:
-    :return: 截面均值翻转
-    """
-    m = np.nanmean(x, axis=1)
-    ret = np.abs(x - m)
-    return ret
-
-
 def _ts_corr_20(x, y):
     """
     :param x:
@@ -275,16 +289,6 @@ def _ts_corr_20(x, y):
     return ret
 
 
-def _reverse_pro(x):
-    """
-    :param x:
-    :return: 截面均值翻转
-    """
-    m = np.nanmean(x, axis=1)[:, np.newaxis]
-    ret = np.where(x > m, 1, -1)
-    return ret
-
-
 def _ts_rank(x, w):
     """
     :param x:
@@ -299,10 +303,6 @@ def _ts_rank(x, w):
     ret[w - 1:, :] = ts_rank[:, -1, :]
 
     return ret
-
-
-def _relu(x):
-    return np.maximum(x, 0)
 
 
 def _ts_weighted_ma(x, period):
@@ -324,6 +324,10 @@ def _ts_mean_rank_20(x):
     ret[period - 1:, :] = np.nanmean(x_rolling, axis=1)
 
     return ret
+
+
+def _if_else_then(x, y, value_a, value_b):
+    return np.where(x < y, value_a, value_b)
 
 
 def _sign(x):
@@ -385,13 +389,16 @@ tan1 = _Function(function=np.tan, name='tan', arity=1)
 sig1 = _Function(function=_sigmoid, name='sig', arity=1)
 relu1 = _Function(function=_relu, name='relu', arity=1)
 sign1 = _Function(function=_sign, name='sign', arity=1)
+power2_1 = _Function(function=_power2, name='power2', arity=1)
+power3_1 = _Function(function=_power3, name='power3', arity=1)
 
-delta1 = _Function(function=_delta, name='delta', arity=1)
 rank1 = _Function(function=_rank, name='rank', arity=1)
 reverse1 = _Function(function=_reverse, name='reverse', arity=1)
 norm1 = _Function(function=_norm, name='norm', arity=1)
 revers_pro1 = _Function(function=_reverse_pro, name='revers_pro', arity=1)
+if_else_then4 = _Function(function=_if_else_then, name='if_else_then', arity=4)
 
+delta1 = _Function(function=_delta, name='delta', arity=1)
 ts_mean2 = _Function(function=_ts_mean, name='ts_mean', arity=2)
 ts_std2 = _Function(function=_ts_std, name='ts_std', arity=2)
 ts_min2 = _Function(function=_ts_min, name='ts_min', arity=2)
@@ -399,11 +406,11 @@ ts_max2 = _Function(function=_ts_max, name='ts_max', arity=2)
 ts_delay2 = _Function(function=_delay, name='ts_delay', arity=2)
 ts_skew2 = _Function(function=_ts_skew, name='ts_skew', arity=2)
 ts_corr20_2 = _Function(function=_ts_corr_20, name='ts_corr_20', arity=2)
+ts_cov_20_2 = _Function(function=_ts_cov_20, name='ts_cov_20', arity=2)
 ts_rank2 = _Function(function=_ts_rank, name='ts_rank', arity=2)
 ts_ms20_1 = _Function(function=_ts_ms_20, name='ts_ms_20', arity=1)
 ts_weighted_ma2 = _Function(function=_ts_weighted_ma, name='ts_weighted_ma', arity=2)
 ts_mean_rank20_1 = _Function(function=_ts_mean_rank_20, name='ts_mean_rank_20', arity=1)
-ts_cov_20_2 = _Function(function=_ts_cov_20, name='ts_cov_20', arity=2)
 
 _function_map = {'add': add2,
                  'sub': sub2,
@@ -422,11 +429,16 @@ _function_map = {'add': add2,
                  'sig': sig1,
                  'relu': relu1,
                  'sign': sign1,
-                 'delta': delta1,
+                 'power2': power2_1,
+                 'power3': power3_1,
+
                  'rank': rank1,
                  'reverse': reverse1,
                  'norm': norm1,
                  'revers_pro': revers_pro1,
+                 'if_else_then': if_else_then4,
+
+                 'delta': delta1,
                  'ts_mean': ts_mean2,
                  'ts_std': ts_std2,
                  'ts_min': ts_min2,
