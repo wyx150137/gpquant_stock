@@ -220,6 +220,35 @@ def _delta(x):
     return x - _shift(x, num, np.nan)
 
 
+def _rank_add(x, y):
+    """
+    :param x:
+    :param y:
+    :return: x 和 y 截面排名相加
+    """
+
+    return _rank(x) + _rank(y)
+
+
+def _rank_sub(x, y):
+    """
+    :param x:
+    :param y:
+    :return: x 和 y 截面排名相减
+    """
+
+    return _rank(x) - _rank(y)
+
+
+def _rank_div(x, y):
+    """
+    :param x:
+    :param y:
+    :return: x 和 y 截面排名相除
+    """
+    return _rank(x) / _rank(y)
+
+
 def _rolling_window(a, window):
     shape = (a.shape[0] - window + 1, window, a.shape[-1])
     strides = (a.strides[0],) + a.strides
@@ -392,6 +421,73 @@ def _ts_mean_between_diff_top_5_bot_5_20(x):
     return ret
 
 
+
+def _ts_mean_between_diff_top_10_bot_10_20(x):
+    """
+    :param x:
+    :return: 过去20个时序值中，最大的十个数字的均值减去最小的十个数字的均值
+    """
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+
+    top_10 = np.partition(x_rolling, -10, axis=1)[:, -10:, :]
+    bot_10 = np.partition(x_rolling, 10, axis=1)[:, :10, :]
+
+    ret[w - 1:, :] = np.nanmean(top_10, axis=1) - np.nanmean(bot_10, axis=1)
+
+    return ret
+
+def _ts_mean_period_20_top_5(x):
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+    top_5 = np.partition(x_rolling, -5, axis=1)[:, -5:, :]
+    ret[w - 1:, :] = np.nanmean(top_5, axis=1)
+
+    return ret
+
+def _ts_mean_period_20_top_10(x):
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+    top_10 = np.partition(x_rolling, -10, axis=1)[:, -10:, :]
+    ret[w - 1:, :] = np.nanmean(top_10, axis=1)
+    return ret
+
+
+def _ts_mean_period_20_bot_5(x):
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+    bot_5 = np.partition(x_rolling, 5, axis=1)[:, :5, :]
+    ret[w - 1:, :] = np.nanmean(bot_5, axis=1)
+
+    return ret
+
+
+def _ts_mean_period_20_bot_10(x):
+
+    w = 20
+
+    ret = np.full(x.shape, np.nan)
+    x_rolling = _rolling_window(x, w)
+    bot_10 = np.partition(x_rolling, 10, axis=1)[:, :10, :]
+    ret[w - 1:, :] = np.nanmean(bot_10, axis=1)
+
+    return ret
+
+
+
+
 add2 = _Function(function=np.add, name='add', arity=2)
 sub2 = _Function(function=np.subtract, name='sub', arity=2)
 mul2 = _Function(function=np.multiply, name='mul', arity=2)
@@ -417,13 +513,16 @@ reverse1 = _Function(function=_reverse, name='reverse', arity=1)
 norm1 = _Function(function=_norm, name='norm', arity=1)
 revers_pro1 = _Function(function=_reverse_pro, name='revers_pro', arity=1)
 if_else_then4 = _Function(function=_if_else_then, name='if_else_then', arity=4)
+rank_add2 = _Function(function=_rank_add, name='rank_add', arity=2)
+rank_sub2 = _Function(function=_rank_sub, name='rank_sub', arity=2)
+rank_div2 = _Function(function=_rank_div, name='rank_div', arity=2)
 
 delta1 = _Function(function=_delta, name='delta', arity=1)
+ts_delay2 = _Function(function=_delay, name='ts_delay', arity=2)
 ts_mean2 = _Function(function=_ts_mean, name='ts_mean', arity=2)
 ts_std2 = _Function(function=_ts_std, name='ts_std', arity=2)
 ts_min2 = _Function(function=_ts_min, name='ts_min', arity=2)
 ts_max2 = _Function(function=_ts_max, name='ts_max', arity=2)
-ts_delay2 = _Function(function=_delay, name='ts_delay', arity=2)
 ts_skew2 = _Function(function=_ts_skew, name='ts_skew', arity=2)
 ts_corr20_2 = _Function(function=_ts_corr_20, name='ts_corr_20', arity=2)
 ts_cov_20_2 = _Function(function=_ts_cov_20, name='ts_cov_20', arity=2)
@@ -434,6 +533,18 @@ ts_mean_rank20_1 = _Function(function=_ts_mean_rank_20, name='ts_mean_rank_20', 
 ts_max_min_ratio_1 = _Function(function=_ts_max_min_ratio, name='ts_max_min_ratio', arity=1)
 ts_mean_between_diff_top_5_bot_5_20 = _Function(function=_ts_mean_between_diff_top_5_bot_5_20,
                                                 name='ts_mean_between_diff_top_5_bot_5_20', arity=1)
+ts_mean_between_diff_top_10_bot_10_20 = _Function(function=_ts_mean_between_diff_top_10_bot_10_20,
+                                                name='ts_mean_between_diff_top_10_bot_10_20', arity=1)
+ts_mean_period_20_top_5 = _Function(function=_ts_mean_period_20_top_5,
+                                                name='ts_mean_period_20_top_5', arity=1)
+ts_mean_period_20_top_10 = _Function(function=_ts_mean_period_20_top_10,
+                                                name='ts_mean_period_20_top_10', arity=1)
+ts_mean_period_20_bot_5 = _Function(function=_ts_mean_period_20_bot_5,
+                                                name='ts_mean_period_20_bot_5', arity=1)
+ts_mean_period_20_bot_10 = _Function(function=_ts_mean_period_20_bot_10,
+                                                name='ts_mean_period_20_bot_10', arity=1)
+
+
 
 _function_map = {'add': add2,
                  'sub': sub2,
@@ -460,6 +571,10 @@ _function_map = {'add': add2,
                  'norm': norm1,
                  'revers_pro': revers_pro1,
                  'if_else_then': if_else_then4,
+                 'rank_add': rank_add2,
+                 'rank_sub': rank_sub2,
+                 'rank_div': rank_div2,
+
 
                  'delta': delta1,
                  'ts_mean': ts_mean2,
@@ -474,4 +589,11 @@ _function_map = {'add': add2,
                  'ts_weighted_ma': ts_weighted_ma2,
                  'ts_mean_rank_20': ts_mean_rank20_1,
                  'ts_cov_20': ts_cov_20_2,
+                 'ts_max_min_ratio': ts_max_min_ratio_1,
+                 'ts_mean_between_diff_top_5_bot_5_20' : ts_mean_between_diff_top_5_bot_5_20,
+                 'ts_mean_between_diff_top_10_bot_10_20': ts_mean_between_diff_top_10_bot_10_20,
+                 'ts_mean_period_20_top_5': ts_mean_period_20_top_5,
+                 'ts_mean_period_20_top_10': ts_mean_period_20_top_10,
+                 'ts_mean_period_20_bot_5': ts_mean_period_20_bot_5,
+                 'ts_mean_period_20_bot_10' : ts_mean_period_20_bot_10,
                  }
